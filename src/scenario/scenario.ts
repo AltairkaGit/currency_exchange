@@ -12,95 +12,25 @@ import {
 import { SaluteMemoryStorage } from '@salutejs/storage-adapter-memory';
 
 import {
-    addNote,
-    deleteNote,
-    deleteNoteApproved,
-    deleteNoteCancelled,
-    doneNote,
+    convert,
     noMatchHandler,
     runAppHandler,
 } from './handlers';
 
-const { action, regexp, text } = createMatchers<SaluteRequest>();
+const { regexp } = createMatchers<SaluteRequest>();
 
 const userScenario = createUserScenario({
-    Profile: {
-        match: text('профиль'),
-        handle: ({ res }) => {
-            res.getProfileData();
-        },
-        children: {
-            ProfileReceived: {
-                match: (req) => req.request.messageName === 'TAKE_PROFILE_DATA',
-                handle: ({ res, req }) => {
-                    const name = req.profile?.customer_name;
-
-                    if (name) {
-                        res.setPronounceText(`Привет, ${name}`);
-
-                        return;
-                    }
-
-                    if (req.request.messageName === 'TAKE_PROFILE_DATA') {
-                        res.setPronounceText(
-                            `Почему-то не получили ваше имя, статус ошибки ${req.request.payload.status_code.code}`,
-                        );
-
-                        return;
-                    }
-
-                    res.setPronounceText('До свидания');
-                },
-            },
-        },
-    },
-    
-    AddNote: {
-        match: regexp(/^(записать|напомнить|добавить запись) (?<note>.+)$/i),
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    Convert: {
+        match: regexp(/^(записать) (в) (?<currencyTo>.+) (?<amount>.+) (?<currencyFrom>.+)$/i),  
         // @ts-ignore
-        handle: addNote,
-    },
-    DoneNote: {
-        match: regexp(/^(выполнить?|сделать?) (?<note>.+)$/i, { normalized: false }),
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        handle: doneNote,
-    },
-    DoneNoteAction: {
-        match: action('done'),
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        handle: doneNote,
-    },
-    DeleteNote: {
-        match: regexp(/^(удалить) (?<note>.+)$/i),
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        handle: deleteNote,
-        children: {
-            yes: {
-                match: regexp(/^(да|продолжить)$/i),
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                handle: deleteNoteApproved,
-            },
-            no: {
-                match: regexp(/^(нет|отменить)$/i),
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                handle: deleteNoteCancelled,
-            },
-        },
+        handle: convert,    
     },
 });
 
 const scenarioWalker = createScenarioWalker({
     systemScenario: createSystemScenario({
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         RUN_APP: runAppHandler,
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         NO_MATCH: noMatchHandler,
     }),

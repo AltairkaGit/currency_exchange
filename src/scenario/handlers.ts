@@ -1,10 +1,8 @@
-import { createMatchers, SaluteHandler, SaluteRequest, Surface, Device } from '@salutejs/scenario';
+import { SaluteHandler, SaluteRequest, Surface, Device } from '@salutejs/scenario';
 
 import { DeviceFamily } from '../types';
 
-import { AddNoteCommand, DeleteNoteCommand, DoneNoteCommand, NoteVariable } from './types';
-
-const { selectItem } = createMatchers<SaluteRequest<NoteVariable>>();
+import { ConvertCommand, ConvertionVariables, TestCommand } from './types';
 
 const SURFACE_TO_PLATFORM_MAP: Partial<Record<Surface, DeviceFamily>> = {
     SBERBOX: 'sberbox',
@@ -28,74 +26,25 @@ const getDeviceFamily = (device: Device | undefined): DeviceFamily => {
 };
 
 export const runAppHandler: SaluteHandler = ({ res, req }) => {
-    res.appendSuggestions(['Запиши купить молоко', 'Добавь запись помыть машину']);
-    res.setPronounceText('начнем');
-    res.appendBubble('Начнем');
-
+    res.appendSuggestions(['Записать в рублях 20 евро', 'Записать в долларах 500 дирхам']);
+    res.setPronounceText('Что вы хотите узнать?');
+    res.appendBubble('Что вы хотите узнать?');
 
     const { device } = req.request.payload;
 
     res.overrideFrontendEndpoint(`${req.appInfo.frontendEndpoint}/${req.character}/@${getDeviceFamily(device)}`);
 };
 
-export const noMatchHandler: SaluteHandler = ({ res }) => {
-    res.setPronounceText('Я не понимаю');
+export const noMatchHandler: SaluteHandler<SaluteRequest<any>> = ({ req, res }) => {
+    res.setPronounceText('Не понятно, вы сказали: ' + req.message.original_text);
+    res.appendCommand<TestCommand>({ type: 'test', payload: { req } });
     res.appendBubble('Я не понимаю');
 };
 
-export const addNote: SaluteHandler<SaluteRequest<NoteVariable>> = ({ req, res }) => {
-    const { note } = req.variables;
-    res.appendCommand<AddNoteCommand>({ type: 'add_note', payload: { note } });
-    res.appendSuggestions(['Запиши купить молоко', 'Добавь запись помыть машину']);
-    res.setPronounceText('Добавлено');
-    res.appendBubble('Добавлено');
-    res.setAutoListening(true);
-};
-
-export const doneNote: SaluteHandler<SaluteRequest<NoteVariable>> = ({ req, res }) => {
-    const { note } = req.variables;
-    const item = selectItem({ title: note })(req);
-
-    if (note && item?.id) {
-        res.appendCommand<DoneNoteCommand>({
-            type: 'done_note',
-            payload: { id: item.id },
-        });
-
-        res.setPronounceText('Умничка');
-        res.appendBubble('Умничка');
-    }
-};
-
-export const deleteNoteApproved: SaluteHandler<SaluteRequest<NoteVariable>, { itemId: string }> = ({
-    res,
-    session,
-}) => {
-    const { itemId } = session;
-
-    res.appendCommand<DeleteNoteCommand>({
-        type: 'delete_note',
-        payload: { id: itemId },
-    });
-
-    res.setPronounceText('Удалено');
-    res.appendBubble('Удалено');
-};
-
-export const deleteNoteCancelled: SaluteHandler = ({ res }) => {
-    res.setPronounceText('Удаление отменено');
-    res.appendBubble('Удаление отменено');
-};
-
-export const deleteNote: SaluteHandler<SaluteRequest<NoteVariable>, { itemId: string }> = ({ req, res, session }) => {
-    const { note } = req.variables;
-    const item = selectItem({ title: note })(req);
-
-    if (note && item?.id) {
-        session.itemId = item.id;
-
-        res.setPronounceText('Вы уверены?');
-        res.appendBubble('Вы уверены?');
-        res.appendSuggestions(['продолжить', 'отменить']);
-    }
+export const convert: SaluteHandler<SaluteRequest<ConvertionVariables>> = ({req, res}) => {
+    const { amount, currencyFrom, currencyTo } = req.variables;
+    
+    res.appendCommand<ConvertCommand>({ type: 'convert', payload: { amount, currencyFrom, currencyTo } });
+    res.setPronounceText('Обновляю курсы валют');
+    
 };

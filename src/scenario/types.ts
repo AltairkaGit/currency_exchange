@@ -19,34 +19,24 @@ export interface InitCommand extends SaluteCommand {
     };
 }
 
-export interface AddNoteCommand extends SaluteCommand {
-    type: 'add_note';
+export interface ConvertCommand extends SaluteCommand {
+    type: 'convert',
     payload: {
-        note: string;
-    };
+        amount: string,
+        currencyFrom: string,
+        currencyTo: string
+    }
 }
 
-export interface DoneNoteCommand extends SaluteCommand {
-    type: 'done_note';
-    payload: {
-        id: string;
-    };
+export interface TestCommand extends SaluteCommand {
+    type: 'test';
+    payload: any
 }
 
-export interface DeleteNoteCommand extends SaluteCommand {
-    type: 'delete_note';
-    payload: {
-        id: string;
-    };
-}
+export type InputActionType = ConvertCommand | TestCommand;
 
-export interface SetInitialNotesCommand extends SaluteCommand {
-    type: 'set_initial_notes';
-    payload: Note[];
-}
-
-export type InputActionType = AddNoteCommand | DoneNoteCommand | DeleteNoteCommand | SetInitialNotesCommand;
-
-export interface NoteVariable extends SaluteRequestVariable {
-    note: string;
+export interface ConvertionVariables extends SaluteRequestVariable {
+    amount: string,
+    currencyFrom: string,
+    currencyTo: string
 }
